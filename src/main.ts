@@ -250,3 +250,14 @@ document.addEventListener('visibilitychange', () => {
 })
 
 startCard()
+
+// ---------------------------------------------------------------------------
+// PWA: register the service worker (production builds only)
+// ---------------------------------------------------------------------------
+if (import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Service worker registration failed:', error)
+    })
+  })
+}

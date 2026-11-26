@@ -58,10 +58,18 @@ body {
   letter-spacing: 0.02em;
 }
 
-.score-wrap {
+.score-wrap,
+.stats {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+}
+
+.stats {
+  gap: 22px;
+}
+
+.stat {
+  gap: 8px;
 }
 
 .score-label {
@@ -71,7 +79,8 @@ body {
   color: var(--ink-dim);
 }
 
-.score {
+.score,
+.level {
   display: inline-block;
   min-width: 2ch;
   font-size: 1.7rem;
@@ -80,18 +89,24 @@ body {
   text-align: right;
 }
 
+.level {
+  color: var(--accent);
+}
+
 .score.negative {
   color: var(--red);
 }
 
-/* Score change feedback */
+/* Score / level change feedback */
 @keyframes score-bump {
   0% { transform: scale(1); }
   35% { transform: scale(1.45); }
   100% { transform: scale(1); }
 }
 
-.score.bump {
+.score.bump,
+.level.bump {
+  display: inline-block;
   animation: score-bump 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
@@ -202,6 +217,33 @@ body {
   animation: note-shake 0.55s ease-in-out both;
 }
 
+/* -------------------------------------------------------------- Timer bar */
+
+.timer {
+  margin-top: 14px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--green), #47c8ff);
+}
+
+/* Bar stays where it was frozen when the card is answered… */
+.timer--expired .timer-bar {
+  background: var(--red);
+}
+
+@keyframes timer-drain {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
 /* ------------------------------------------------------------- Feedback */
 
 .feedback {
@@ -223,6 +265,12 @@ body {
   animation: feedback-in 0.3s ease-out both;
 }
 
+.feedback.levelup {
+  color: var(--accent);
+  text-shadow: 0 0 18px rgba(124, 108, 255, 0.6);
+  animation: levelup-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
 @keyframes feedback-in {
   from {
     opacity: 0;
@@ -231,6 +279,21 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes levelup-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.85);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -282,8 +345,10 @@ body {
   .note--correct,
   .note--wrong,
   .score.bump,
+  .level.bump,
   .feedback.ok,
-  .feedback.bad {
+  .feedback.bad,
+  .feedback.levelup {
     animation: none;
   }
 }

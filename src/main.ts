@@ -5,7 +5,9 @@ import './style.css'
  *
  * A random diatonic note (C4–A5, treble clef) is drawn on an SVG staff.
  * The user answers by typing the note letter (A–G) on the keyboard
- * (or tapping the on-screen keys): +1 point if correct, −1 if wrong.
+ * (or tapping the on-screen keys): +1 point if correct, −1 if wrong
+ * or if the time runs out. Every 10 points the level goes up and the
+ * time limit per card is reduced by 20%.
  */
 
 const NOTE_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const
@@ -57,8 +59,11 @@ function isNoteName(value: string): value is NoteName {
 // ---------------------------------------------------------------------------
 const staffEl = document.querySelector<SVGSVGElement>('#staff')!
 const scoreEl = document.querySelector<HTMLElement>('#score')!
+const levelEl = document.querySelector<HTMLElement>('#level')!
 const feedbackEl = document.querySelector<HTMLElement>('#feedback')!
 const keyboardEl = document.querySelector<HTMLElement>('#keyboard')!
+const timerEl = document.querySelector<HTMLElement>('#timer')!
+const timerBarEl = document.querySelector<HTMLElement>('#timer-bar')!
 
 function staffLinesMarkup(): string {
   let out = ''
@@ -114,10 +119,19 @@ function renderStaff(note: StaffNote, state: CardState): void {
 // ---------------------------------------------------------------------------
 // Game state
 // ---------------------------------------------------------------------------
+const BASE_LIMIT_MS = 10000 // time per card at level 1
+const LEVEL_FACTOR = 0.8 // each level: time reduced by 20%
+const FEEDBACK_MS = 1100 // how long correct/wrong feedback stays on screen
+
 let score = 0
+let level = 1
 let current = randomNote()
 let locked = false
-let nextTimer = 0
+let cardTimer = 0 // countdown for the current card
+let nextTimer = 0 // delay before the next card after an answer
+
+/** Time limit for the current level. */
+const limitMs = (): number => BASE_LIMIT_MS * Math.pow(LEVEL_FACTOR, level - 1)
 
 function setScore(value: number): void {
   score = value
@@ -128,18 +142,79 @@ function setScore(value: number): void {
   scoreEl.classList.add('bump')
 }
 
-function setFeedback(text: string, kind: '' | 'ok' | 'bad'): void {
+function setLevel(value: number): void {
+  level = value
+  levelEl.textContent = String(level)
+  levelEl.classList.remove('bump')
+  void levelEl.offsetWidth
+  levelEl.classList.add('bump')
+}
+
+function setFeedback(text: string, kind: '' | 'ok' | 'bad' | 'levelup'): void {
   feedbackEl.textContent = text
   feedbackEl.className = kind === '' ? 'feedback' : `feedback ${kind}`
+}
+
+// --- Timer bar (pure CSS animation, restarted per card) -------------------
+
+function startTimerBar(ms: number): void {
+  timerEl.classList.remove('timer--expired')
+  timerBarEl.style.width = ''
+  timerBarEl.style.animation = 'none'
+  void timerBarEl.offsetWidth // restart the CSS animation
+  timerBarEl.style.animation = `timer-drain ${ms}ms linear forwards`
+}
+
+/** Stop the bar mid-drain, keeping its current width. */
+function freezeTimerBar(): void {
+  const width = getComputedStyle(timerBarEl).width
+  timerBarEl.style.animation = 'none'
+  timerBarEl.style.width = width
+}
+
+// --- Card lifecycle ---------------------------------------------------------
+
+function startCard(): void {
+  current = randomNote()
+  renderStaff(current, 'question')
+  setFeedback('Type the note name (A–G)', '')
+  locked = false
+  startTimerBar(limitMs())
+  cardTimer = window.setTimeout(onTimeUp, limitMs())
+}
+
+function stopCardTimer(): void {
+  window.clearTimeout(cardTimer)
+  freezeTimerBar()
+}
+
+/** The card expired: −1 point, reveal the answer, move on. */
+function onTimeUp(): void {
+  if (locked) return
+  locked = true
+  timerEl.classList.add('timer--expired')
+  setScore(score - 1)
+  setFeedback(`⏱ Time's up — it was ${current.name}${current.octave}`, 'bad')
+  renderStaff(current, 'wrong')
+  nextTimer = window.setTimeout(startCard, FEEDBACK_MS)
 }
 
 function answer(letter: string): void {
   if (locked || !isNoteName(letter)) return
   locked = true
+  stopCardTimer()
 
   if (letter === current.name) {
     setScore(score + 1)
-    setFeedback(`✓ ${current.name}${current.octave} — correct!`, 'ok')
+    let kind: 'ok' | 'levelup' = 'ok'
+    let text = `✓ ${current.name}${current.octave} — correct!`
+    // Every multiple of 10 points kicks in a new, faster level
+    if (score > 0 && score % 10 === 0) {
+      setLevel(level + 1)
+      kind = 'levelup'
+      text = `✓ ${current.name}${current.octave} — Level ${level}! (${(limitMs() / 1000).toFixed(1)}s)`
+    }
+    setFeedback(text, kind)
     renderStaff(current, 'correct')
   } else {
     setScore(score - 1)
@@ -147,12 +222,7 @@ function answer(letter: string): void {
     renderStaff(current, 'wrong')
   }
 
-  nextTimer = window.setTimeout(() => {
-    current = randomNote()
-    renderStaff(current, 'question')
-    setFeedback('Type the note name (A–G)', '')
-    locked = false
-  }, 1100)
+  nextTimer = window.setTimeout(startCard, FEEDBACK_MS)
 }
 
 // On-screen keys (tap targets for touch devices)
@@ -175,11 +245,8 @@ window.addEventListener('keydown', (event) => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && locked) {
     window.clearTimeout(nextTimer)
-    current = randomNote()
-    renderStaff(current, 'question')
-    setFeedback('Type the note name (A–G)', '')
-    locked = false
+    startCard()
   }
 })
 
-renderStaff(current, 'question')
+startCard()

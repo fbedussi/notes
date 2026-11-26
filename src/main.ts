@@ -256,7 +256,9 @@ startCard()
 // ---------------------------------------------------------------------------
 if (import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch((error) => {
+    // Relative path: registers with the page's own directory as scope, so it
+    // works both at a domain root and under a GitHub Pages subpath
+    void navigator.serviceWorker.register('./sw.js').catch((error) => {
       console.warn('Service worker registration failed:', error)
     })
   })

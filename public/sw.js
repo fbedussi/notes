@@ -12,15 +12,18 @@ const VERSION = 'v1'
 const SHELL_CACHE = `shell-${VERSION}`
 const RUNTIME_CACHE = `runtime-${VERSION}`
 
+// Relative URLs resolve against the service worker's own location, so this
+// works both at a domain root and under a subpath (e.g. GitHub Pages
+// project sites at https://<user>.github.io/<repo>/)
 const SHELL_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon-maskable-192.png',
-  '/icon-maskable-512.png',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './favicon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-192.png',
+  './icon-maskable-512.png',
 ]
 
 self.addEventListener('install', (event) => {
@@ -64,7 +67,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(new URL('index.html', self.location)))
     }),
   )
 })

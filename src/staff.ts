@@ -69,10 +69,17 @@ function noteMarkup(note: StaffNote, state: CardState): string {
     </g>`
 }
 
+/** Name label shown next to the note when the answer was wrong. */
+function answerLabelMarkup(note: StaffNote): string {
+  const y = stepToY(note.step)
+  return `<text class="note-label" x="${NOTE_X + 26}" y="${y + 5}">${note.name}${note.octave}</text>`
+}
+
 export function renderStaff(note: StaffNote, state: CardState): void {
   staffEl.innerHTML = `
     ${staffLinesMarkup()}
     <text class="clef" x="64" y="${BOTTOM_LINE_Y - 2 * SPACING}">𝄞</text>
     ${noteMarkup(note, state)}
+    ${state === 'wrong' ? answerLabelMarkup(note) : ''}
   `
 }

@@ -90,6 +90,7 @@ function startCard(): void {
   current = randomNote()
   renderStaff(current, 'question')
   setFeedback('Type the note name (A–G)', '')
+  clearRevealedKeys()
   locked = false
   startTimerBar(limitMs())
   cardTimer = window.setTimeout(onTimeUp, limitMs())
@@ -108,6 +109,7 @@ function onTimeUp(): void {
   setScore(score - 1)
   setFeedback(`⏱ Time's up — it was ${current.name}${current.octave}`, 'bad')
   renderStaff(current, 'wrong')
+  revealKey(current)
   nextTimer = window.setTimeout(startCard, FEEDBACK_MS)
 }
 
@@ -128,16 +130,19 @@ function answer(letter: string): void {
     }
     setFeedback(text, kind)
     renderStaff(current, 'correct')
+    revealKey(current)
   } else {
     setScore(score - 1)
     setFeedback(`✗ It was ${current.name}${current.octave}`, 'bad')
     renderStaff(current, 'wrong')
+    revealKey(current)
   }
 
   nextTimer = window.setTimeout(startCard, FEEDBACK_MS)
 }
 
 // On-screen keys (tap targets for touch devices)
+const keys = new Map<NoteName, HTMLButtonElement>()
 for (const name of NOTE_NAMES) {
   const btn = document.createElement('button')
   btn.type = 'button'
@@ -145,6 +150,17 @@ for (const name of NOTE_NAMES) {
   btn.textContent = name
   btn.addEventListener('click', () => answer(name))
   keyboardEl.append(btn)
+  keys.set(name, btn)
+}
+
+/** Light up the key holding the right answer… */
+function revealKey(note: StaffNote): void {
+  keys.get(note.name)?.classList.add('revealed')
+}
+
+/** …and clear it again when the next card starts. */
+function clearRevealedKeys(): void {
+  for (const btn of keys.values()) btn.classList.remove('revealed')
 }
 
 // Physical keyboard

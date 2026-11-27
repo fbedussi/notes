@@ -72,7 +72,7 @@ function noteMarkup(note: StaffNote, state: CardState): string {
 /** Name label shown next to the note when the answer was wrong. */
 function answerLabelMarkup(note: StaffNote): string {
   const y = stepToY(note.step)
-  return `<text class="note-label" x="${NOTE_X + 26}" y="${y + 5}">${note.name}${note.octave}</text>`
+  return `<text class="note-label" x="${NOTE_X + 26}" y="${y + 5}">${note.name}</text>`
 }
 
 export function renderStaff(note: StaffNote, state: CardState): void {

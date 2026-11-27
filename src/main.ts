@@ -21,8 +21,7 @@ const MAX_STEP = 12
 function randomNote(): StaffNote {
   const step = MIN_STEP + Math.floor(Math.random() * (MAX_STEP - MIN_STEP + 1))
   const name = NOTE_NAMES[step % 7]
-  const octave = 4 + Math.floor(step / 7)
-  return { step, name, octave }
+  return { step, name }
 }
 
 function isNoteName(value: string): value is NoteName {
@@ -107,7 +106,7 @@ function onTimeUp(): void {
   locked = true
   timerEl.classList.add('timer--expired')
   setScore(score - 1)
-  setFeedback(`⏱ Time's up — it was ${current.name}${current.octave}`, 'bad')
+  setFeedback(`⏱ Time's up — it was ${current.name}`, 'bad')
   renderStaff(current, 'wrong')
   revealKey(current)
   nextTimer = window.setTimeout(startCard, FEEDBACK_MS)
@@ -121,19 +120,19 @@ function answer(letter: string): void {
   if (letter === current.name) {
     setScore(score + 1)
     let kind: 'ok' | 'levelup' = 'ok'
-    let text = `✓ ${current.name}${current.octave} — correct!`
+    let text = `✓ ${current.name} — correct!`
     // Every multiple of 10 points kicks in a new, faster level
     if (score > 0 && score % 10 === 0) {
       setLevel(level + 1)
       kind = 'levelup'
-      text = `✓ ${current.name}${current.octave} — Level ${level}! (${(limitMs() / 1000).toFixed(1)}s)`
+      text = `✓ ${current.name} — Level ${level}! (${(limitMs() / 1000).toFixed(1)}s)`
     }
     setFeedback(text, kind)
     renderStaff(current, 'correct')
     revealKey(current)
   } else {
     setScore(score - 1)
-    setFeedback(`✗ It was ${current.name}${current.octave}`, 'bad')
+    setFeedback(`✗ It was ${current.name}`, 'bad')
     renderStaff(current, 'wrong')
     revealKey(current)
   }
